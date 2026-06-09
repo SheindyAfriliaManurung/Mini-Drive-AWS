@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mini Drive AWS</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#f5f5f5;min-height:100vh;}
+.header{background:#232f3e;color:white;padding:16px 32px;display:flex;align-items:center;gap:12px;}
+.header h1{font-size:22px;font-weight:600;}
+.header i{font-size:28px;color:#ff9900;}
+.container{max-width:900px;margin:32px auto;padding:0 24px;}
+.upload-card{background:white;border-radius:12px;border:1.5px dashed #ccc;padding:28px;text-align:center;margin-bottom:28px;}
+.upload-card p{color:#666;margin-bottom:16px;font-size:15px;}
+.upload-row{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;}
+input[type=file]{border:1px solid #ccc;border-radius:8px;padding:7px 12px;background:white;font-size:14px;cursor:pointer;}
+.btn{padding:9px 20px;border-radius:8px;border:none;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:500;transition:opacity 0.15s;}
+.btn-primary{background:#ff9900;color:white;}
+.btn-primary:hover{opacity:0.85;}
+.btn-secondary{background:#232f3e;color:white;}
+.btn-secondary:hover{opacity:0.85;}
+.btn-view{background:#1a73e8;color:white;padding:7px 14px;font-size:13px;}
+.btn-view:hover{opacity:0.85;}
+.btn-delete{background:#e53935;color:white;padding:7px 14px;font-size:13px;}
+.btn-delete:hover{opacity:0.85;}
+.section-title{font-size:17px;font-weight:600;color:#232f3e;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.file-card{background:white;border-radius:10px;border:1px solid #e0e0e0;padding:16px;display:flex;flex-direction:column;gap:8px;}
+.file-icon{font-size:32px;color:#ff9900;}
+.file-name{font-size:15px;font-weight:600;color:#232f3e;word-break:break-all;}
+.file-id{font-size:11px;color:#999;word-break:break-all;}
+.file-actions{display:flex;gap:8px;margin-top:4px;}
+.empty{text-align:center;color:#aaa;padding:40px;font-size:15px;}
+.loading{text-align:center;color:#aaa;padding:40px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <i class="ti ti-brand-aws"></i>
+  <h1>Mini Drive AWS</h1>
+</div>
+
+<div class="container">
+  <div class="upload-card">
+    <p><i class="ti ti-cloud-upload" style="font-size:36px;color:#ff9900;display:block;margin-bottom:8px;"></i>Upload file ke Mini Drive</p>
+    <div class="upload-row">
+      <input type="file" id="f">
+      <button class="btn btn-primary" onclick="upload()"><i class="ti ti-upload"></i> Upload</button>
+      <button class="btn btn-secondary" onclick="loadFiles()"><i class="ti ti-refresh"></i> Refresh</button>
+    </div>
+  </div>
+
+  <div class="section-title"><i class="ti ti-files"></i> File Tersimpan</div>
+  <div id="files" class="loading">Memuat file...</div>
+</div>
+
+<script>
+const API = "https://3tyg84j5xi.execute-api.us-east-1.amazonaws.com"
+
+function getIcon(name) {
+  const ext = name.split('.').pop().toLowerCase()
+  if (['jpg','jpeg','png','gif','webp'].includes(ext)) return 'ti-photo'
+  if (ext === 'pdf') return 'ti-file-type-pdf'
+  if (['doc','docx'].includes(ext)) return 'ti-file-type-doc'
+  if (['xls','xlsx'].includes(ext)) return 'ti-file-type-xls'
+  if (['ppt','pptx'].includes(ext)) return 'ti-file-type-ppt'
+  if (ext === 'txt') return 'ti-file-text'
+  return 'ti-file'
+}
+
+async function upload() {
+  const file = document.getElementById("f").files[0]
+  if (!file) { alert("Pilih file dulu!"); return }
+  const reader = new FileReader()
+  reader.onload = async function(e) {
+    const base64 = e.target.result.split(',')[1]
+    await fetch(API + "/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: file.name, content: base64, isBase64: true })
+    })
+    document.getElementById("f").value = ""
+    alert("Upload berhasil!")
+    loadFiles()
+  }
+  reader.readAsDataURL(file)
+}
+
+async function deleteFile(id) {
+  if (!confirm("Hapus file ini?")) return
+  await fetch(API + "/files/" + id, { method: "DELETE" })
+  loadFiles()
+}
+
+async function viewFile(index) {
+  const file = window._files[index]
+  const res = await fetch(API + "/file?key=" + encodeURIComponent(file.s3Key))
+  const url = await res.text()
+  window.open(url, '_blank')
+}
+
+async function loadFiles() {
+  document.getElementById("files").innerHTML = '<div class="loading">Memuat file...</div>'
+  const res = await fetch(API + "/files")
+  const data = await res.json()
+  window._files = data
+  if (data.length === 0) {
+    document.getElementById("files").innerHTML = '<div class="empty"><i class="ti ti-inbox" style="font-size:40px;display:block;margin-bottom:8px;"></i>Belum ada file</div>'
+    return
+  }
+  let html = '<div class="file-grid">'
+  data.forEach((file, index) => {
+    html += `<div class="file-card">
+      <i class="ti ${getIcon(file.fileName)} file-icon"></i>
+      <div class="file-name">${file.fileName}</div>
+      <div class="file-id">ID: ${file.fileId}</div>
+      <div class="file-actions">
+        <button class="btn btn-view" onclick="viewFile(${index})"><i class="ti ti-eye"></i> Lihat</button>
+        <button class="btn btn-delete" onclick="deleteFile('${file.fileId}')"><i class="ti ti-trash"></i> Hapus</button>
+      </div>
+    </div>`
+  })
+  html += '</div>'
+  document.getElementById("files").innerHTML = html
+}
+
+loadFiles()
+</script>
+</body>
+</html>
