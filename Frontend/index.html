@@ -3,60 +3,195 @@
 <head>
 <title>Mini Drive AWS</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js/dist/amazon-cognito-identity.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:#f5f5f5;min-height:100vh;}
-.header{background:#232f3e;color:white;padding:16px 32px;display:flex;align-items:center;gap:12px;}
+.header{background:#232f3e;color:white;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
+.header-left{display:flex;align-items:center;gap:12px;}
 .header h1{font-size:22px;font-weight:600;}
 .header i{font-size:28px;color:#ff9900;}
 .container{max-width:900px;margin:32px auto;padding:0 24px;}
+.auth-card{background:white;border-radius:12px;border:1px solid #e0e0e0;padding:32px;max-width:400px;margin:60px auto;}
+.auth-card h2{margin-bottom:20px;color:#232f3e;}
+.input-group{margin-bottom:16px;}
+.input-group label{display:block;font-size:13px;color:#555;margin-bottom:6px;}
+.input-group input{width:100%;border:1px solid #ccc;border-radius:8px;padding:10px 12px;font-size:14px;}
+.btn{padding:9px 20px;border-radius:8px;border:none;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:500;transition:opacity 0.15s;width:100%;justify-content:center;margin-bottom:8px;}
+.btn-primary{background:#ff9900;color:white;}
+.btn-primary:hover{opacity:0.85;}
+.btn-small{width:auto;padding:7px 14px;font-size:13px;margin-bottom:0;}
+.btn-view{background:#1a73e8;color:white;}
+.btn-delete{background:#e53935;color:white;}
+.btn-rename{background:#f57c00;color:white;}
+.btn-share{background:#2e7d32;color:white;}
+.btn-logout{background:#666;color:white;}
 .upload-card{background:white;border-radius:12px;border:1.5px dashed #ccc;padding:28px;text-align:center;margin-bottom:28px;}
 .upload-card p{color:#666;margin-bottom:16px;font-size:15px;}
 .upload-row{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;}
 input[type=file]{border:1px solid #ccc;border-radius:8px;padding:7px 12px;background:white;font-size:14px;cursor:pointer;}
-.btn{padding:9px 20px;border-radius:8px;border:none;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:500;transition:opacity 0.15s;}
-.btn-primary{background:#ff9900;color:white;}
-.btn-primary:hover{opacity:0.85;}
-.btn-secondary{background:#232f3e;color:white;}
-.btn-secondary:hover{opacity:0.85;}
-.btn-view{background:#1a73e8;color:white;padding:7px 14px;font-size:13px;}
-.btn-view:hover{opacity:0.85;}
-.btn-delete{background:#e53935;color:white;padding:7px 14px;font-size:13px;}
-.btn-delete:hover{opacity:0.85;}
+.btn-upload{background:#ff9900;color:white;width:auto;}
+.btn-refresh{background:#232f3e;color:white;width:auto;}
 .section-title{font-size:17px;font-weight:600;color:#232f3e;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
 .file-card{background:white;border-radius:10px;border:1px solid #e0e0e0;padding:16px;display:flex;flex-direction:column;gap:8px;}
 .file-icon{font-size:32px;color:#ff9900;}
 .file-name{font-size:15px;font-weight:600;color:#232f3e;word-break:break-all;}
-.file-id{font-size:11px;color:#999;word-break:break-all;}
-.file-actions{display:flex;gap:8px;margin-top:4px;}
+.file-meta{font-size:12px;color:#888;display:flex;flex-direction:column;gap:4px;margin-top:4px;}
+.file-meta div{display:flex;align-items:center;gap:5px;}
+.role-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;margin-bottom:4px;}
+.role-owner{background:#fff3e0;color:#e65100;}
+.role-editor{background:#e8f5e9;color:#2e7d32;}
+.role-viewer{background:#e3f2fd;color:#1565c0;}
+.file-actions{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;}
 .empty{text-align:center;color:#aaa;padding:40px;font-size:15px;}
 .loading{text-align:center;color:#aaa;padding:40px;}
+.error{color:#e53935;font-size:13px;margin-top:8px;}
+.switch-link{text-align:center;font-size:13px;color:#555;margin-top:12px;}
+.switch-link a{color:#1a73e8;cursor:pointer;text-decoration:underline;}
+#app{display:none;}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <i class="ti ti-brand-aws"></i>
-  <h1>Mini Drive AWS</h1>
+<div id="authPage">
+  <div class="auth-card">
+    <h2 id="authTitle">Login</h2>
+    <div id="confirmSection" style="display:none;">
+      <div class="input-group">
+        <label>Kode Verifikasi (cek email)</label>
+        <input type="text" id="confirmCode" placeholder="Masukkan kode...">
+      </div>
+      <button class="btn btn-primary" onclick="confirmSignup()">Verifikasi</button>
+      <p class="error" id="confirmError"></p>
+    </div>
+    <div id="formSection">
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="email@example.com">
+      </div>
+      <div class="input-group">
+        <label>Password (min. 8 karakter)</label>
+        <input type="password" id="password" placeholder="Password...">
+      </div>
+      <button class="btn btn-primary" id="authBtn" onclick="handleAuth()">Login</button>
+      <p class="error" id="authError"></p>
+      <div class="switch-link">
+        <span id="switchText">Belum punya akun? </span>
+        <a onclick="toggleMode()">Daftar</a>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="container">
-  <div class="upload-card">
-    <p><i class="ti ti-cloud-upload" style="font-size:36px;color:#ff9900;display:block;margin-bottom:8px;"></i>Upload file ke Mini Drive</p>
-    <div class="upload-row">
-      <input type="file" id="f">
-      <button class="btn btn-primary" onclick="upload()"><i class="ti ti-upload"></i> Upload</button>
-      <button class="btn btn-secondary" onclick="loadFiles()"><i class="ti ti-refresh"></i> Refresh</button>
+<div id="app">
+  <div class="header">
+    <div class="header-left">
+      <i class="ti ti-brand-aws"></i>
+      <h1>Mini Drive AWS</h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span id="userEmail" style="color:#ccc;font-size:14px;"></span>
+      <button class="btn btn-small btn-logout" onclick="logout()"><i class="ti ti-logout"></i> Logout</button>
     </div>
   </div>
 
-  <div class="section-title"><i class="ti ti-files"></i> File Tersimpan</div>
-  <div id="files" class="loading">Memuat file...</div>
+  <div class="container">
+    <div class="upload-card">
+      <p><i class="ti ti-cloud-upload" style="font-size:36px;color:#ff9900;display:block;margin-bottom:8px;"></i>Upload file ke Mini Drive</p>
+      <div class="upload-row">
+        <input type="file" id="f">
+        <button class="btn btn-upload" onclick="upload()"><i class="ti ti-upload"></i> Upload</button>
+        <button class="btn btn-refresh" onclick="loadFiles()"><i class="ti ti-refresh"></i> Refresh</button>
+      </div>
+    </div>
+    <div class="section-title"><i class="ti ti-files"></i> File Tersimpan</div>
+    <div id="files" class="loading">Memuat file...</div>
+  </div>
 </div>
 
 <script>
 const API = "https://3tyg84j5xi.execute-api.us-east-1.amazonaws.com"
+const POOL_ID = "us-east-1_7fdaXBguB"
+const CLIENT_ID = "4v7csbd3fnrs4seo3vvjma3n1"
+
+const poolData = { UserPoolId: POOL_ID, ClientId: CLIENT_ID }
+const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData)
+
+let isLoginMode = true
+let currentUser = null
+let idToken = null
+
+function toggleMode() {
+  isLoginMode = !isLoginMode
+  document.getElementById("authTitle").innerText = isLoginMode ? "Login" : "Daftar"
+  document.getElementById("authBtn").innerText = isLoginMode ? "Login" : "Daftar"
+  document.getElementById("switchText").innerText = isLoginMode ? "Belum punya akun? " : "Sudah punya akun? "
+  document.querySelector("#switchText + a").innerText = isLoginMode ? "Daftar" : "Login"
+  document.getElementById("authError").innerText = ""
+}
+
+function handleAuth() {
+  if (isLoginMode) login()
+  else signup()
+}
+
+function signup() {
+  const email = document.getElementById("email").value
+  const password = document.getElementById("password").value
+  const attributeList = [new AmazonCognitoIdentity.CognitoUserAttribute({ Name: "email", Value: email })]
+  userPool.signUp(email, password, attributeList, null, (err, result) => {
+    if (err) { document.getElementById("authError").innerText = err.message; return }
+    currentUser = result.user
+    document.getElementById("formSection").style.display = "none"
+    document.getElementById("confirmSection").style.display = "block"
+    document.getElementById("authTitle").innerText = "Verifikasi Email"
+  })
+}
+
+function confirmSignup() {
+  const code = document.getElementById("confirmCode").value
+  currentUser.confirmRegistration(code, true, (err) => {
+    if (err) { document.getElementById("confirmError").innerText = err.message; return }
+    document.getElementById("confirmSection").style.display = "none"
+    document.getElementById("formSection").style.display = "block"
+    isLoginMode = true
+    document.getElementById("authTitle").innerText = "Login"
+    document.getElementById("authBtn").innerText = "Login"
+    alert("Akun berhasil dibuat! Silakan login.")
+  })
+}
+
+function login() {
+  const email = document.getElementById("email").value
+  const password = document.getElementById("password").value
+  const authDetails = new AmazonCognitoIdentity.AuthenticationDetails({ Username: email, Password: password })
+  const cognitoUser = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: userPool })
+  cognitoUser.authenticateUser(authDetails, {
+    onSuccess: (result) => {
+      idToken = result.getIdToken().getJwtToken()
+      document.getElementById("authPage").style.display = "none"
+      document.getElementById("app").style.display = "block"
+      document.getElementById("userEmail").innerText = email
+      loadFiles()
+    },
+    onFailure: (err) => {
+      document.getElementById("authError").innerText = err.message
+    }
+  })
+}
+
+function logout() {
+  const user = userPool.getCurrentUser()
+  if (user) user.signOut()
+  idToken = null
+  document.getElementById("app").style.display = "none"
+  document.getElementById("authPage").style.display = "block"
+}
+
+function getHeaders() {
+  return { "Content-Type": "application/json", "Authorization": idToken }
+}
 
 function getIcon(name) {
   const ext = name.split('.').pop().toLowerCase()
@@ -69,6 +204,12 @@ function getIcon(name) {
   return 'ti-file'
 }
 
+function getRoleBadge(role) {
+  if (role === 'owner') return '<span class="role-badge role-owner">Owner</span>'
+  if (role === 'editor') return '<span class="role-badge role-editor">Editor</span>'
+  return '<span class="role-badge role-viewer">Viewer</span>'
+}
+
 async function upload() {
   const file = document.getElementById("f").files[0]
   if (!file) { alert("Pilih file dulu!"); return }
@@ -77,7 +218,7 @@ async function upload() {
     const base64 = e.target.result.split(',')[1]
     await fetch(API + "/upload", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getHeaders(),
       body: JSON.stringify({ fileName: file.name, content: base64, isBase64: true })
     })
     document.getElementById("f").value = ""
@@ -89,20 +230,55 @@ async function upload() {
 
 async function deleteFile(id) {
   if (!confirm("Hapus file ini?")) return
-  await fetch(API + "/files/" + id, { method: "DELETE" })
+  const res = await fetch(API + "/files/" + id, { method: "DELETE", headers: getHeaders() })
+  if (res.status === 403) { alert("Hanya owner yang bisa menghapus file!"); return }
   loadFiles()
+}
+
+async function renameFile(index) {
+  const file = window._files[index]
+  const ext = file.fileName.split('.').pop()
+  const newName = prompt("Nama baru untuk file ini:", file.fileName)
+  if (!newName || newName === file.fileName) return
+  const finalName = newName.includes('.') ? newName : newName + '.' + ext
+  const res = await fetch(API + "/files/" + file.fileId, {
+    method: "PUT",
+    headers: getHeaders(),
+    body: JSON.stringify({ newName: finalName })
+  })
+  if (res.status === 403) { alert("Hanya owner atau editor yang bisa rename file!"); return }
+  alert("File berhasil direname!")
+  loadFiles()
+}
+
+async function shareFile(index) {
+  const file = window._files[index]
+  const email = prompt("Email yang ingin diberi akses:")
+  if (!email) return
+  const role = prompt("Role (viewer / editor):")
+  if (!role || !['viewer','editor'].includes(role.toLowerCase())) {
+    alert("Role harus 'viewer' atau 'editor'")
+    return
+  }
+  const res = await fetch(API + "/files/" + file.fileId + "/share", {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ email: email, role: role.toLowerCase() })
+  })
+  if (res.status === 403) { alert("Hanya owner yang bisa share file!"); return }
+  alert("File berhasil di-share ke " + email + " sebagai " + role)
 }
 
 async function viewFile(index) {
   const file = window._files[index]
-  const res = await fetch(API + "/file?key=" + encodeURIComponent(file.s3Key))
+  const res = await fetch(API + "/file?key=" + encodeURIComponent(file.s3Key), { headers: getHeaders() })
   const url = await res.text()
   window.open(url, '_blank')
 }
 
 async function loadFiles() {
   document.getElementById("files").innerHTML = '<div class="loading">Memuat file...</div>'
-  const res = await fetch(API + "/files")
+  const res = await fetch(API + "/files", { headers: getHeaders() })
   const data = await res.json()
   window._files = data
   if (data.length === 0) {
@@ -111,13 +287,25 @@ async function loadFiles() {
   }
   let html = '<div class="file-grid">'
   data.forEach((file, index) => {
+    const role = file.myRole || 'viewer'
+    const canEdit = role === 'owner' || role === 'editor'
+    const canDelete = role === 'owner'
+    const canShare = role === 'owner'
     html += `<div class="file-card">
       <i class="ti ${getIcon(file.fileName)} file-icon"></i>
+      ${getRoleBadge(role)}
       <div class="file-name">${file.fileName}</div>
-      <div class="file-id">ID: ${file.fileId}</div>
+      <div class="file-meta">
+        <div><i class="ti ti-user" style="font-size:12px;"></i> Upload oleh: <b>${file.uploadedBy || '-'}</b></div>
+        <div><i class="ti ti-clock" style="font-size:12px;"></i> Diupload: ${file.uploadedAt || '-'}</div>
+        <div><i class="ti ti-edit" style="font-size:12px;"></i> Terakhir diubah: ${file.lastModifiedAt || '-'}</div>
+        <div><i class="ti ti-user-edit" style="font-size:12px;"></i> Diubah oleh: <b>${file.lastModifiedBy || '-'}</b></div>
+      </div>
       <div class="file-actions">
-        <button class="btn btn-view" onclick="viewFile(${index})"><i class="ti ti-eye"></i> Lihat</button>
-        <button class="btn btn-delete" onclick="deleteFile('${file.fileId}')"><i class="ti ti-trash"></i> Hapus</button>
+        <button class="btn btn-small btn-view" onclick="viewFile(${index})"><i class="ti ti-eye"></i> Lihat</button>
+        ${canEdit ? `<button class="btn btn-small btn-rename" onclick="renameFile(${index})"><i class="ti ti-pencil"></i> Rename</button>` : ''}
+        ${canShare ? `<button class="btn btn-small btn-share" onclick="shareFile(${index})"><i class="ti ti-share"></i> Share</button>` : ''}
+        ${canDelete ? `<button class="btn btn-small btn-delete" onclick="deleteFile('${file.fileId}')"><i class="ti ti-trash"></i> Hapus</button>` : ''}
       </div>
     </div>`
   })
@@ -125,7 +313,21 @@ async function loadFiles() {
   document.getElementById("files").innerHTML = html
 }
 
-loadFiles()
+const existingUser = userPool.getCurrentUser()
+if (existingUser) {
+  existingUser.getSession((err, session) => {
+    if (!err && session.isValid()) {
+      idToken = session.getIdToken().getJwtToken()
+      existingUser.getUserAttributes((err, attrs) => {
+        const email = attrs?.find(a => a.Name === 'email')?.Value || ''
+        document.getElementById("userEmail").innerText = email
+      })
+      document.getElementById("authPage").style.display = "none"
+      document.getElementById("app").style.display = "block"
+      loadFiles()
+    }
+  })
+}
 </script>
 </body>
 </html>
