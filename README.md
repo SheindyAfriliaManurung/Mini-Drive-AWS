@@ -7,74 +7,42 @@ The project demonstrates the integration of multiple AWS services to implement a
 ---
 
 # Architecture Diagram
-
-<p align="center">
-  <img src="architecture-diagram.png" width="600">
-</p>
-
----
+<img width="487" height="735" alt="architecture-diagram" src="https://github.com/user-attachments/assets/2728f302-cb68-4c4f-b924-ec72de730c0f" />
 
 # AWS Services Used
 
 ## Amazon Cognito
 
 Used for user authentication and JWT token generation.
-
-<p align="center">
-  <img src="Amazon Cognito.png" width="800">
-</p>
-
----
+<img width="926" height="434" alt="Amazon Cognito" src="https://github.com/user-attachments/assets/e2926092-3e4a-4ab0-a547-b98f9536e508" />
 
 ## Amazon API Gateway
 
 Used to expose and secure REST API endpoints.
+<img width="952" height="302" alt="API Gateway" src="https://github.com/user-attachments/assets/c806712f-28cb-4d5d-a642-06c4ecafa80b" />
 
-<p align="center">
-  <img src="API Gateway.png" width="800">
-</p>
-
----
 
 ## AWS Lambda
 
 Used as the serverless backend for business logic processing.
+<img width="959" height="347" alt="Lambda" src="https://github.com/user-attachments/assets/a847d0f0-b6ea-488b-bde8-fe4cbae28710" />
 
-<p align="center">
-  <img src="Lambda.png" width="800">
-</p>
-
----
 
 ## Amazon S3
 
 Used for cloud file storage.
-
-<p align="center">
-  <img src="Amazon S3.png" width="800">
-</p>
-
----
+<img width="959" height="294" alt="Amazon S3" src="https://github.com/user-attachments/assets/8dcb2944-8f63-4585-8a8b-99eb88d87363" />
 
 ## Amazon DynamoDB
 
 Used to store file metadata, ownership information, and permissions.
+<img width="959" height="174" alt="DynamoDB" src="https://github.com/user-attachments/assets/38c32d12-fccc-4614-b5b6-144bb3a73ce8" />
 
-<p align="center">
-  <img src="DynamoDB.png" width="800">
-</p>
-
----
 
 ## Amazon CloudWatch
 
 Used for monitoring and logging.
-
-<p align="center">
-  <img src="CloudWatch.png" width="800">
-</p>
-
----
+<img width="773" height="406" alt="CloudWatch" src="https://github.com/user-attachments/assets/906a6936-13df-4ed1-b43d-c1700877b2ae" />
 
 # Features
 
@@ -106,36 +74,16 @@ Used for monitoring and logging.
 # Application Screenshots
 
 ## Login Page
-
-<p align="center">
-  <img src="login.png" width="800">
-</p>
-
----
+<img width="309" height="275" alt="login" src="https://github.com/user-attachments/assets/65d8bd5b-9de6-44ef-88a6-29b00f1a6dd0" />
 
 ## Dashboard
+<img width="948" height="476" alt="dashboard" src="https://github.com/user-attachments/assets/6983ceb1-633a-47ae-a98a-fecf588aec94" />
 
-<p align="center">
-  <img src="dashboard.png" width="800">
-</p>
-
----
 
 ## File Sharing
+<img width="335" height="164" alt="share1" src="https://github.com/user-attachments/assets/5ee7e55f-f040-49b0-af52-de1455db5337" />
 
-### Share Example 1
-
-<p align="center">
-  <img src="share1.png" width="800">
-</p>
-
-### Share Example 2
-
-<p align="center">
-  <img src="share2.png" width="800">
-</p>
-
----
+<img width="335" height="161" alt="share2" src="https://github.com/user-attachments/assets/50d2050f-e229-4a80-b46d-3abf826cc49f" />
 
 # Architecture Overview
 
