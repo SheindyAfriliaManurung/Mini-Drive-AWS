@@ -14,8 +14,7 @@ def get_email_from_token(event):
 
 def lambda_handler(event, context):
     user_email = get_email_from_token(event)
-
-    # Ambil semua permission milik user ini
+    
     perms = permissions_table.query(
         IndexName='userEmail-index',
         KeyConditionExpression=boto3.dynamodb.conditions.Key('userEmail').eq(user_email)
