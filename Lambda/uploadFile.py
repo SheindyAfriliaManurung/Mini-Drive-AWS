@@ -56,7 +56,6 @@ def lambda_handler(event, context):
         "lastModifiedAt": now
     })
 
-    # Set uploader sebagai owner
     permissions_table.put_item(Item={
         "fileId": fileid,
         "userEmail": uploaded_by,
