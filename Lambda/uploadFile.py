@@ -5,10 +5,12 @@ import base64
 from datetime import datetime
 
 s3 = boto3.client('s3')
+sns = boto3.client('sns')
 db = boto3.resource('dynamodb')
 table = db.Table("FilesTable")
 permissions_table = db.Table("FilePermissions")
 BUCKET = "mini-drive-storage-823405633682-us-east-1-an"
+TOPIC_ARN = "arn:aws:sns:us-east-1:823405633682:MiniDriveNotifications"
 
 CONTENT_TYPES = {
     'jpg': 'image/jpeg',
@@ -27,6 +29,19 @@ def get_email_from_token(event):
         return claims.get('email', 'Unknown')
     except:
         return 'Unknown'
+
+def notify(email, subject, message):
+    try:
+        sns.publish(
+            TopicArn=TOPIC_ARN,
+            Subject=subject,
+            Message=message,
+            MessageAttributes={
+                'email': {'DataType': 'String', 'StringValue': email}
+            }
+        )
+    except Exception as e:
+        print("SNS error:", e)
 
 def lambda_handler(event, context):
     body = json.loads(event['body'])
@@ -61,6 +76,9 @@ def lambda_handler(event, context):
         "userEmail": uploaded_by,
         "role": "owner"
     })
+
+    notify(uploaded_by, "Upload Berhasil - Mini Drive",
+           f"File '{filename}' berhasil diupload pada {now}.")
 
     return {
         "statusCode": 200,
