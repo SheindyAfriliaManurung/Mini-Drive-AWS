@@ -1,12 +1,15 @@
 import boto3
 import json
 from datetime import datetime
+from boto3.dynamodb.conditions import Key
 
 s3 = boto3.client('s3')
+sns = boto3.client('sns')
 db = boto3.resource('dynamodb')
 table = db.Table("FilesTable")
 permissions_table = db.Table("FilePermissions")
 BUCKET = "mini-drive-storage-823405633682-us-east-1-an"
+TOPIC_ARN = "arn:aws:sns:us-east-1:823405633682:MiniDriveNotifications"
 
 def get_email_from_token(event):
     try:
@@ -14,6 +17,19 @@ def get_email_from_token(event):
         return claims.get('email', 'Unknown')
     except:
         return 'Unknown'
+
+def notify(email, subject, message):
+    try:
+        sns.publish(
+            TopicArn=TOPIC_ARN,
+            Subject=subject,
+            Message=message,
+            MessageAttributes={
+                'email': {'DataType': 'String', 'StringValue': email}
+            }
+        )
+    except Exception as e:
+        print("SNS error:", e)
 
 def lambda_handler(event, context):
     fileid = event['pathParameters']['id']
@@ -36,6 +52,7 @@ def lambda_handler(event, context):
 
     item = table.get_item(Key={"fileId": fileid})
     old_key = item['Item']['s3Key']
+    old_name = item['Item']['fileName']
     new_key = "uploads/" + new_name
 
     s3.copy_object(Bucket=BUCKET, CopySource={'Bucket': BUCKET, 'Key': old_key}, Key=new_key)
@@ -52,6 +69,13 @@ def lambda_handler(event, context):
         }
     )
 
+    all_perms = permissions_table.query(
+        KeyConditionExpression=Key('fileId').eq(fileid)
+    )
+    for p in all_perms['Items']:
+        notify(p['userEmail'], "File Diubah Nama - Mini Drive",
+               f"File '{old_name}' telah diganti nama menjadi '{new_name}' oleh {requester}.")
+               
     return {
         "statusCode": 200,
         "headers": {
