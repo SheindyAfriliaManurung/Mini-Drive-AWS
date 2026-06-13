@@ -2,7 +2,10 @@ import boto3
 import json
 
 db = boto3.resource('dynamodb')
+sns = boto3.client('sns')
 permissions_table = db.Table("FilePermissions")
+table = db.Table("FilesTable")
+TOPIC_ARN = "arn:aws:sns:us-east-1:823405633682:MiniDriveNotifications"
 
 def get_email_from_token(event):
     try:
@@ -11,11 +14,24 @@ def get_email_from_token(event):
     except:
         return 'Unknown'
 
+def notify(email, subject, message):
+    try:
+        sns.publish(
+            TopicArn=TOPIC_ARN,
+            Subject=subject,
+            Message=message,
+            MessageAttributes={
+                'email': {'DataType': 'String', 'StringValue': email}
+            }
+        )
+    except Exception as e:
+        print("SNS error:", e)
+
 def lambda_handler(event, context):
     fileid = event['pathParameters']['id']
     body = json.loads(event['body'])
     target_email = body['email']
-    role = body['role'] 
+    role = body['role']
     requester = get_email_from_token(event)
 
     owner_check = permissions_table.get_item(
@@ -37,6 +53,12 @@ def lambda_handler(event, context):
         "userEmail": target_email,
         "role": role
     })
+
+    file_item = table.get_item(Key={"fileId": fileid})
+    filename = file_item['Item']['fileName'] if 'Item' in file_item else fileid
+
+    notify(target_email, "File Dibagikan - Mini Drive",
+           f"File '{filename}' telah dibagikan kepada Anda oleh {requester} sebagai {role}.")
 
     return {
         "statusCode": 200,
